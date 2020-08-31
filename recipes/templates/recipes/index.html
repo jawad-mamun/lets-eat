@@ -1,0 +1,124 @@
+{%extends "recipes/layout.html"%}
+
+{%block head%}
+    <title>Find Recipes</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+        document.querySelector('form').onsubmit = function(){
+            //gets the ingredient list and other specifications from the form to pass into the API link
+            const ingredient = document.querySelector("#ingredient").value;
+            const number = document.querySelector("#number").value;
+            var pantry = "false";
+            if (document.querySelector("#pantry").value == "on"){
+                pantry = "true";
+            }
+            //automatically sets ranking=2 to minimize missing ingredients and limitLicense=true to get open license recipes
+            fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredient}&ignorePantry=${pantry}&number=${number}&ranking=1&limitLicense=true&apiKey=8db276647fce4015882e2e7afdbbd77a`)
+            .then(response => response.json())
+            //"data" is the JSON parsed
+            //async is used because inside the synchronous for loop going through the recipes, there are asynchronous calls to the API
+            //the await feature is used to make sure the link is retrieved properly before moving on
+            .then(async data =>{
+                var list = "";
+                var recipeLink = "";
+                //traverses through the recipes
+                for(var i = 0; i<data.length; i++){
+                    //Recipe name
+                    list += "<h2>" + data[i].title + "</h2>";
+                    //Picture of the recipe
+                    list += '<img src=' + data[i].image + ' alt="Picture of ' +data[i].title+ '">';
+                    //List of missing ingredients
+                    list += '<div> Missing Ingredients: </div>';
+                    list += '<ul>';
+                        //Tells the client if there are no missing ingredients
+                        if (data[i].missedIngredients.length === 0){
+                        list += '<li> You have no missing ingredients! </li>';
+                        }
+                        //Traverses through list of missing ingredients
+                        for (var j = 0; j<data[i].missedIngredients.length; j++){
+                            list += '<li>' + data[i].missedIngredients[j].original +'</li>';
+                        }
+                    list+= '</ul>';
+                    //List of used ingredients
+                    list+= '<div> Used Ingredients: </div>';
+                    //Traverses through list of used ingredients
+                    list+= '<ul>';
+                        for (var j = 0; j<data[i].usedIngredients.length; j++){
+                            list+= '<li>' + data[i].usedIngredients[j].original +'</li>';
+                        }
+                    list+= '</ul>';
+                    //List of unused ingredients
+                    list+= '<div> Unused Ingredients: </div>';
+                    list+= '<ul>';
+                        //Tells the client if there are no unused ingredients
+                        if (data[i].unusedIngredients.length === 0){
+                        list+= '<li> You have no unused ingredients! </li>';
+                        }
+                        //Traverses through list of unused ingredients
+                        for (var j = 0; j<data[i].unusedIngredients.length; j++){
+                            list+= '<li>' + data[i].unusedIngredients[j].original +'</li>';
+                        }
+                    list+= '</ul>';
+                    //Provides the link to the recipe using a separate API link
+                    const id = data[i].id;
+                    let apidata = await fetch(`https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&apiKey=8db276647fce4015882e2e7afdbbd77a`);
+                    let textjson = await apidata.json();
+                    recipeLink = textjson.sourceUrl;
+                    list+= '<div> <a href="' + recipeLink + '">Link to Recipe</a> </div>';
+                }
+                document.querySelector("#result").innerHTML = list; //this string is exactly what gets placed in the HTML
+            })
+            .catch(error=>{
+                    console.log('Error: ', error)
+            });
+        return false;
+        }
+    });
+    </script>
+    <style>
+        .center{
+            margin: auto;
+            width: 50%;
+        }
+        .form_margin{
+            margin: 30px;
+        }
+    </style>
+{%endblock%}
+
+{%block body%}
+    <div class="center">
+        <div class="alert alert-primary" role="alert" style = "text-align:center;">
+            LetsEat- Specify your ingredients below to get started!
+        </div>
+    </div>
+    
+    <form class="form_margin">
+        <div class = "form-group">
+            <label for="ingredient">List All Ingredients Here, Separated by Commas:</label>
+            <input class = "form-control" id = "ingredient" placeholder= "Ingredients" type = "text">
+            <div class="row">
+                <div class="col">
+                    <label for="number">Number of Recipes to Find: </label>
+                    <input id = "number" type="text" class="form-control" placeholder="Number of Recipes">
+                </div>
+                <div class="col">
+                    <input class="form-check-input" type="checkbox" value="" id="pantry">
+                    <label class="form-check-label" for="pantry">
+                        Check Here to Ignore Typical Pantry Items (water, salt, flour, etc.)
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <input type = "submit" class="btn btn-primary" value = "Search for Recipes">
+    </form>
+
+    <ul>
+        <div id="result">
+
+        </div>
+    </ul>
+    
+    
+{%endblock%}
