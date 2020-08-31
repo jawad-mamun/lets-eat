@@ -8,3 +8,5 @@ Note: The API key used in this code will only allow for 70 recipes to be searche
 <br />
 Here are some examples of the website in action:
 <img src="./letseat_demo1.png">
+<img src="./letseat_demo2.png">
+<img src="./letseat_demo3.png">
